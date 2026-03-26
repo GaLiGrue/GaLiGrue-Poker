@@ -1,4 +1,4 @@
-from Klassen import Spieler
+from Bauteil_Spieler_Mitte import Spieler
 
 Players = ['1', '2', '3']
 SpielerAnz = len(Players)
@@ -10,7 +10,7 @@ BigBlind = 50
 
 
 for i in range(1, SpielerAnz + 1):
-    Spieler1 = Spieler(Players[i - 1], 1000, i)
+    Spieler1 = Spieler(1000, i, Players[i - 1])
     AlleSpieler.append(Spieler1)
 for i in range(SpielerAnz):
     if i == SpielerAnz - 1:
@@ -20,44 +20,71 @@ for i in range(SpielerAnz):
 
 # Spieler Positionen: 0 = Dealer, 1 = Small Blind, 2 = Big Blind, 3 = Erste Position nach Big Blind, usw.
 
+def AlleSpielerGleichziehen(AlleSpieler, AktuellerSpieler, Pott, LastRaiser = None, CallAmount = 0):
+    """
+    Geht solgange, bis alle Spieler den gleichen Betrag gesetzt haben
+    """
+    while AktuellerSpieler != LastRaiser: # Bis alle gesetzt haben
+        if AktuellerSpieler.get_IstDrin():  # Ob der Spieler noch drin ist
+            Valid = False
+            while not Valid: # Bis der Spieler eine valide Aktion gemacht hat
+                Aktion = input(f'Spieler {AktuellerSpieler.get_Name()} Hier noch Aktion erhalten: ')
+                match Aktion:
+                    case 'call':
+                        GesetzterBetrag = CallAmount - AktuellerSpieler.get_ChipsGesetzt()
+                        if GesetzterBetrag > AktuellerSpieler.get_Chips():
+                            GesetzterBetrag = AktuellerSpieler.get_Chips() # All in
+                        AktuellerSpieler.add_Chips(-GesetzterBetrag)
+                        AktuellerSpieler.add_ChipsGesetzt(GesetzterBetrag)
+                        Pott += GesetzterBetrag
+                        Valid = True
+                    case 'fold':
+                        AktuellerSpieler.set_IstDrin(False)
+                        Valid = True
+                    case 'raise':
+                        Valid = True
+                        RaiseBetrag = int(input('Hier noch Betrag erhalten: '))
+                        GesetzterBetrag = CallAmount - AktuellerSpieler.get_ChipsGesetzt() # Das muss er soqieso setzten
+                        if RaiseBetrag >= AktuellerSpieler.get_Chips():
+                            RaiseBetrag = AktuellerSpieler.get_Chips() # All in
+                        if RaiseBetrag <= GesetzterBetrag:
+                            print('Raise muss höher als Call sein')
+                            Valid = False
+                            continue
+                        CallAmount += RaiseBetrag - GesetzterBetrag
+                        AktuellerSpieler.add_Chips(-RaiseBetrag)
+                        AktuellerSpieler.add_ChipsGesetzt(RaiseBetrag)
+                        Pott += RaiseBetrag
+                        LastRaiser = AktuellerSpieler
+                    case _:
+                        'Bitte nochmal(invalide Eingabe)'
+        AktuellerSpieler = AktuellerSpieler.get_Nächster()
+    return Pott
+
 def RundePreflop(AlleSpieler):
+    # Small und Big Blind
     global Pott
     for Spieler in AlleSpieler:
-        if Spieler._Spieler__Position == 1:
-            Spieler._Spieler__Chips -= SmallBlind
-            Spieler._Spieler__ChipsGesetzt += SmallBlind
+        if Spieler.get_Position() == 1:
+            Spieler.add_Chips(-SmallBlind)
+            Spieler.set_ChipsGesetzt(SmallBlind)
             Pott += SmallBlind
-            SmallBlindPlayer = Spieler._Spieler__Name
-            AktuellerSpieler = Spieler._Spieler__Nächster
+            SmallBlindPlayer = Spieler.get_Name()
+            AktuellerSpieler = Spieler.get_Nächster()
             break
 
-    AktuellerSpieler._Spieler__Chips -= BigBlind
-    AktuellerSpieler._Spieler__ChipsGesetzt += BigBlind
+    AktuellerSpieler.add_Chips(-BigBlind)
+    AktuellerSpieler.set_ChipsGesetzt(BigBlind)
     Pott += BigBlind
     LastRaiser = AktuellerSpieler
-    AktuellerSpieler = AktuellerSpieler._Spieler__Nächster
+    AktuellerSpieler = AktuellerSpieler.get_Nächster()
     CallAmount = BigBlind
 
-    while AktuellerSpieler != LastRaiser:
-        if AktuellerSpieler._Spieler__IstDrin:
-            Aktion = input(f'Spieler {AktuellerSpieler._Spieler__Name} Hier noch Aktion erhalten: ')
-            match Aktion:
-                case 'call':
-                    GesetzterBetrag = CallAmount - AktuellerSpieler._Spieler__ChipsGesetzt
-                    AktuellerSpieler._Spieler__Chips -= GesetzterBetrag
-                    AktuellerSpieler._Spieler__ChipsGesetzt += GesetzterBetrag
-                    Pott += GesetzterBetrag
-                case 'fold':
-                    AktuellerSpieler._Spieler__IstDrin = False
-                case 'raise':
-                    RaiseBetrag = int(input('Hier noch Betrag erhalten: '))
-                    CallAmount = RaiseBetrag + AktuellerSpieler._Spieler__ChipsGesetzt
-                    AktuellerSpieler._Spieler__Chips -= RaiseBetrag
-                    AktuellerSpieler._Spieler__ChipsGesetzt += RaiseBetrag
-                    Pott += RaiseBetrag
-                    LastRaiser = AktuellerSpieler 
+    Pott = AlleSpielerGleichziehen(AlleSpieler, AktuellerSpieler, Pott, LastRaiser, CallAmount)
+
+    
         
-        AktuellerSpieler = AktuellerSpieler._Spieler__Nächster
+        
 
     
 
@@ -65,5 +92,5 @@ def RundePreflop(AlleSpieler):
 
 RundePreflop(AlleSpieler)
 
-for Spieler in AlleSpieler:
-    print(f'Spieler: {Spieler._Spieler__Name}, Chips: {Spieler._Spieler__Chips}, Chips gesetzt: {Spieler._Spieler__ChipsGesetzt}, Ist drin: {Spieler._Spieler__IstDrin}')
+for Player in AlleSpieler:
+    print(f'Spieler: {Player.get_Name()}, Chips: {Player.get_Chips()}, Chips gesetzt: {Player.get_ChipsGesetzt()}, Ist drin: {Player.get_IstDrin()}')
