@@ -86,6 +86,29 @@ class Karte:
     def get_Value(self):
         return self.__Value
 
+    def get_image_path(self):
+        SUIT_MAP = {
+            'k': 'clubs',
+            'h': 'hearts',
+            'p': 'spades',
+            's': 'diamonds'
+        }
+
+        suit_folder = SUIT_MAP[self.get_Suit()]
+        value = self.get_Value()
+
+        if value <= 10:
+            value_name = str(value - 1)
+        elif value == 11:
+            value_name = "jack"
+        elif value == 12:
+            value_name = "queen"
+        elif value == 13:
+            value_name = "king"
+        elif value == 14:
+            value_name = "ace"
+        return f"cards/{suit_folder}/card_{value_name}.svg"
+
 class Kartendeck():
     def __init__(self):
         Liste = ['k2','k3','k4','k5','k6','k7','k8','k9','k10','k11','k12','k13','k14','h2','h3','h4','h5','h6','h7','h8','h9','h10','h11','h12','h13','h14','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13','p14','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11','s12','s13','s14']
