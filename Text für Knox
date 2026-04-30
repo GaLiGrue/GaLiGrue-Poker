@@ -1,0 +1,82 @@
+import socket
+import threading
+
+HOST = "0.0.0.0"
+PORT = 5555
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind((HOST, PORT))
+server.listen()
+
+clients = []
+namen = []
+
+print("Server läuft...")
+
+
+def sende_alle(text):
+    """
+    Nachricht an alle Clients senden
+    """
+    for client in clients:
+        try:
+            client.send((text + "\n").encode())
+        except:
+            pass
+
+
+def frage_spieler(client, text):
+    """
+    Einem bestimmten Spieler Frage senden und Antwort empfangen
+    """
+    try:
+        client.send(("INPUT:" + text + "\n").encode())
+        antwort = client.recv(1024).decode().strip()
+        return antwort
+    except:
+        return None
+
+
+def handle_client(conn, addr):
+    """
+    Neuer Spieler verbindet sich
+    """
+    print(f"Neue Verbindung: {addr}")
+
+    conn.send("INPUT:Wie heißt du?\n".encode())
+    name = conn.recv(1024).decode().strip()
+
+    clients.append(conn)
+    namen.append(name)
+
+    sende_alle(f"{name} ist beigetreten.")
+
+
+def spiel_starten():
+    """
+    Beispiel-Spielrunde
+    """
+    sende_alle("Spiel startet!")
+
+    for i in range(len(clients)):
+        client = clients[i]
+        name = namen[i]
+
+        aktion = frage_spieler(client, f"{name}, wähle call / raise / fold")
+
+        sende_alle(f"{name} wählt: {aktion}")
+
+    sende_alle("Runde beendet.")
+
+
+# Verbindungen annehmen
+while True:
+    conn, addr = server.accept()
+
+    thread = threading.Thread(target=handle_client, args=(conn, addr))
+    thread.start()
+
+    # Wenn 2 Spieler verbunden sind -> starten
+    if len(clients) >= 2:
+        spiel_starten()
+        break
