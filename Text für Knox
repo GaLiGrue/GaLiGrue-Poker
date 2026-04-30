@@ -1,82 +1,49 @@
 import socket
 import threading
 
-HOST = "0.0.0.0"
+HOST = "127.0.0.1"   # Server-IP (bei anderem PC z.B. "192.168.178.25")
 PORT = 5555
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((HOST, PORT))
-server.listen()
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect((HOST, PORT))
 
-clients = []
-namen = []
-
-print("Server läuft...")
+running = True
 
 
-def sende_alle(text):
+def empfangen():
     """
-    Nachricht an alle Clients senden
+    Nachrichten vom Server empfangen
     """
-    for client in clients:
+    global running
+
+    while running:
         try:
-            client.send((text + "\n").encode())
+            msg = client.recv(1024).decode()
+
+            if not msg:
+                print("Verbindung beendet.")
+                break
+
+            print(msg)
+
+            # Wenn Server Eingabe erwartet:
+            if msg.startswith("INPUT:"):
+                antwort = input("> ")
+                client.send(antwort.encode())
+
         except:
-            pass
+            print("Verbindung verloren.")
+            break
+
+    running = False
+    client.close()
 
 
-def frage_spieler(client, text):
-    """
-    Einem bestimmten Spieler Frage senden und Antwort empfangen
-    """
-    try:
-        client.send(("INPUT:" + text + "\n").encode())
-        antwort = client.recv(1024).decode().strip()
-        return antwort
-    except:
-        return None
+# Empfangsthread starten
+thread = threading.Thread(target=empfangen)
+thread.start()
 
 
-def handle_client(conn, addr):
-    """
-    Neuer Spieler verbindet sich
-    """
-    print(f"Neue Verbindung: {addr}")
-
-    conn.send("INPUT:Wie heißt du?\n".encode())
-    name = conn.recv(1024).decode().strip()
-
-    clients.append(conn)
-    namen.append(name)
-
-    sende_alle(f"{name} ist beigetreten.")
-
-
-def spiel_starten():
-    """
-    Beispiel-Spielrunde
-    """
-    sende_alle("Spiel startet!")
-
-    for i in range(len(clients)):
-        client = clients[i]
-        name = namen[i]
-
-        aktion = frage_spieler(client, f"{name}, wähle call / raise / fold")
-
-        sende_alle(f"{name} wählt: {aktion}")
-
-    sende_alle("Runde beendet.")
-
-
-# Verbindungen annehmen
-while True:
-    conn, addr = server.accept()
-
-    thread = threading.Thread(target=handle_client, args=(conn, addr))
-    thread.start()
-
-    # Wenn 2 Spieler verbunden sind -> starten
-    if len(clients) >= 2:
-        spiel_starten()
-        break
+# Hauptthread wartet
+while running:
+    pass
