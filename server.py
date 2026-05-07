@@ -1,6 +1,7 @@
 import socket
 import threading
 import classes
+import time
 
 HOST = "0.0.0.0"
 PORT = 5555
@@ -11,6 +12,7 @@ server.listen()
 
 clients = []
 namen = []
+lock = threading.Lock()
 
 print("Server läuft...")
 
@@ -39,21 +41,24 @@ def frage_spieler(client, text):
     except:
         return None
 
-
 def handle_client(conn, addr):
     """
     Neuer Spieler verbindet sich
     """
+    global clients
+    global namen
+
     print(f"Neue Verbindung: {addr}")
 
     conn.send("INPUT:Wie heißt du?\n".encode())
+
     name = conn.recv(1024).decode().strip()
 
-    clients.append(conn)
-    namen.append(name)
+    with lock:
+        clients.append(conn)
+        namen.append(name)
 
     sende_alle(f"{name} ist beigetreten.")
-
 
 def spiel_starten():
     """
@@ -153,7 +158,7 @@ def spiel_starten():
             Beikarten = get_Beikarten(CounterValue, 5) # Fünf höchste Beikarten
             return [8] + Beikarten # Alle Kartenwerte zurückgeben, von höchster zu niedrigster Karte
         
-        Gewinner = classes.Player('temp', 0, 'temp')
+        Gewinner = classes.Player('temp', 0, 'temp', None)
         Gewinner.set_Hand([9]) # Handvalue 9 ist die schlechteste Hand, damit jeder Spieler besser ist als der Gewinner am Anfang
         AlleGewinner = [Gewinner]
         for Spieler in AlleSpieler:
@@ -193,6 +198,7 @@ def spiel_starten():
         SmallBlind = 25
         BigBlind = 50
         for Spieler in AlleSpieler: # ersten Spieler bestimmen
+            Spieler.set_ChipsGesetzt(0)
             if Spieler.get_Position() == 1:
                 LastRaiser = Spieler
                 AktuellerSpieler = Spieler # SmallBlind ist erster der dran ist
@@ -221,7 +227,7 @@ def spiel_starten():
                     # Informationen ausgeben
                     Karten = AktuellerSpieler.get_Karten()
                     MittelfeldKarten = Mittelfeld.get_Karten()
-                    client = AktuellerSpieler.get_client()
+                    client = AktuellerSpieler.get_ClientName()
                     sende_alle(f'Spieler {AktuellerSpieler.get_Name()} ist am Zug')
                     sende_eine(client, f'Deine Karten: {[Karte.get_Name() for Karte in Karten]}')
                     sende_eine(client, f'Mittelfeld Karten: {[Karte.get_Name() for Karte in MittelfeldKarten]}')
@@ -290,7 +296,7 @@ def spiel_starten():
     SpielerAnzahl = len(clients)
     AlleSpieler = []
     for i in range(1, SpielerAnzahl + 1):
-        Spieler1 = classes.Player(1000, i, f'Spieler {i}', clients[i-1])
+        Spieler1 = classes.Player(1000, i, namen[i-1], clients[i-1])
         AlleSpieler.append(Spieler1)
     for i in range(SpielerAnzahl):
         if i == SpielerAnzahl - 1:
@@ -355,14 +361,28 @@ def spiel_starten():
 
 # Verbindungen annehmen
 anz = int(input('Wie viele Spieler: '))
-while len(clients) < anz-1:
+
+# while len(clients) < anz-1:
+#     conn, addr = server.accept()
+
+#     thread = threading.Thread(target=handle_client, args=(conn, addr))
+#     thread.start()
+
+#     # Wenn 2 Spieler verbunden sind -> starten
+#     # if len(clients) >= 2:
+#     #     spiel_starten()
+#     #     break
+
+Anzclients = 0
+while Anzclients < anz:
     conn, addr = server.accept()
+    Anzclients += 1
+    thread = threading.Thread(
+        target=handle_client,
+        args=(conn, addr)
+    )
 
-    thread = threading.Thread(target=handle_client, args=(conn, addr))
     thread.start()
-
-    # Wenn 2 Spieler verbunden sind -> starten
-    # if len(clients) >= 2:
-    #     spiel_starten()
-    #     break
+while len(clients) < Anzclients:
+    time.sleep(0.1)
 spiel_starten()

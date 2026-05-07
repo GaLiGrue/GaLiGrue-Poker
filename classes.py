@@ -26,7 +26,7 @@ class Aktionen:
         '''Die Liste der Karten leeren'''
         self.__Karten=[]
 class Player(Aktionen):
-    def __init__(self,Chips,Position,Name):
+    def __init__(self,Chips,Position,Name,ClientName):
         super().__init__(Chips)
         self.__Name = Name
         self.__Position = Position
@@ -35,6 +35,7 @@ class Player(Aktionen):
         self.__IstDrin = True
         self.__AllIn = False
         self.__Hand = None
+        self.__ClientName = ClientName
     def get_Position(self):
         return self.__Position
     def set_Position(self, Value):
@@ -70,6 +71,10 @@ class Player(Aktionen):
         return self.__AllIn
     def set_AllIn(self, Value):
         self.__AllIn = Value
+    def get_ClientName(self):
+        return self.__ClientName
+    def set_ClientName(self, Value):
+        self.__ClientName=Value
 class Mitte(Aktionen):
     def __init__(self,Chips):
         super().__init__(Chips)
