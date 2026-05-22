@@ -1,6 +1,6 @@
 import classes
 
-def WerGewinnt(AlleSpieler, KartenMitte):
+def WerGewinnt(AlleSpieler, KartenMitte, Debug=False):
     """
     Alle Spieler vergleichen und den Gewinner bestimmen
     """
@@ -91,7 +91,7 @@ def WerGewinnt(AlleSpieler, KartenMitte):
         Beikarten = get_Beikarten(CounterValue, 5) # Fünf höchste Beikarten
         return [8] + Beikarten # Alle Kartenwerte zurückgeben, von höchster zu niedrigster Karte
     
-    Gewinner = classes.Player('temp', 0, 'temp')
+    Gewinner = classes.Player('temp', 0, 'temp', 'temp')
     Gewinner.set_Hand([9]) # Handvalue 9 ist die schlechteste Hand, damit jeder Spieler besser ist als der Gewinner am Anfang
     AlleGewinner = [Gewinner]
     for Spieler in AlleSpieler:
@@ -102,25 +102,52 @@ def WerGewinnt(AlleSpieler, KartenMitte):
             Spieler.set_Hand(Hand)
             
             # Hand ausgeben
-            print(f'{Spieler.get_Name()} hat Hand {Spieler.get_Hand()}')
+            if Debug:
+                print(f'{Spieler.get_Name()} hat Hand {Spieler.get_Hand()}')
             
             # Spieler mit der besten Hand bestimmen
             if Spieler != Gewinner:
                 SpielerHand = Spieler.get_Hand()
                 GewinnerHand = Gewinner.get_Hand()
                 for i in range(len(SpielerHand)):
-                    if SpielerHand[i] < GewinnerHand[i]: # Spieler hat bessere Hand
-                        Gewinner = Spieler
-                        AlleGewinner = [Gewinner]
-                        break
-                    elif SpielerHand[i] > GewinnerHand[i]: # Gewinner hat bessere Hand
-                        break
-                    else: # Beide haben gleiche Hand, weiter vergleichen
-                        continue
+                    if i == 0:
+                        if SpielerHand[i] < GewinnerHand[i]: # Spieler hat bessere Hand-Kategorie
+                            Gewinner = Spieler
+                            AlleGewinner = [Gewinner]
+                            break
+                        elif SpielerHand[i] > GewinnerHand[i]: # Gewinner hat bessere Hand-Kategorie
+                            break
+                    else:
+                        if SpielerHand[i] > GewinnerHand[i]: # Spieler hat bessere Beikarte / hoehere Karte
+                            Gewinner = Spieler
+                            AlleGewinner = [Gewinner]
+                            break
+                        elif SpielerHand[i] < GewinnerHand[i]: # Gewinner hat bessere Beikarte / hoehere Karte
+                            break
                 else: # Beide haben exakt gleiche Hand, beide gewinnen
                     AlleGewinner.append(Spieler)
 
     return AlleGewinner
+
+
+def GewinnerAusWebSpielern(SpielerListe, MittelfeldKarten):
+    """Wertet Gewinner fuer Flask-Spieler-Dicts mit der bestehenden WerGewinnt-Logik aus."""
+    AlleSpieler = []
+    for index, Spieler in enumerate(SpielerListe, start=1):
+        WebSpieler = classes.Player(
+            Spieler["chips"],
+            index,
+            Spieler["name"],
+            Spieler["id"]
+        )
+        WebSpieler.set_IstDrin(not Spieler.get("folded", False))
+        WebSpieler.add_Karten([classes.Karte(Name) for Name in Spieler["cards"]])
+        AlleSpieler.append(WebSpieler)
+
+    KartenMitte = classes.Mitte(0)
+    KartenMitte.add_Karten([classes.Karte(Name) for Name in MittelfeldKarten])
+    Gewinner = WerGewinnt(AlleSpieler, KartenMitte)
+    return [Spieler.get_ClientName() for Spieler in Gewinner]
 
 def AlleSpielerGleichziehen(AlleSpieler, Preflop, Mittelfeld):
     """
@@ -224,67 +251,72 @@ def Kartengeben(AlleSpieler, Anzahl, Deck):
             Spieler.add_Karten([Karte])
     return AlleSpieler, Deck
 
-# Spieler erstellen
-SpielerAnzahl = int(input('Spieler Anzahl: '))
-AlleSpieler = []
-for i in range(1, SpielerAnzahl + 1):
-    Spieler1 = classes.Player(1000, i, f'Spieler {i}')
-    AlleSpieler.append(Spieler1)
-for i in range(SpielerAnzahl):
-    if i == SpielerAnzahl - 1:
-        AlleSpieler[i].set_Nächster(AlleSpieler[0])
-    else:
-        AlleSpieler[i].set_Nächster(AlleSpieler[i + 1])
+def KonsolenspielStarten():
+    # Spieler erstellen
+    SpielerAnzahl = int(input('Spieler Anzahl: '))
+    AlleSpieler = []
+    for i in range(1, SpielerAnzahl + 1):
+        Spieler1 = classes.Player(1000, i, f'Spieler {i}', f'Spieler {i}')
+        AlleSpieler.append(Spieler1)
+    for i in range(SpielerAnzahl):
+        if i == SpielerAnzahl - 1:
+            AlleSpieler[i].set_Nächster(AlleSpieler[0])
+        else:
+            AlleSpieler[i].set_Nächster(AlleSpieler[i + 1])
 
-while True:
-    # Deck erstellen
-    Deck = classes.Kartendeck()
+    while True:
+        # Deck erstellen
+        Deck = classes.Kartendeck()
 
-    # Mittelfeld erstellen
-    KartenMitte = classes.Mitte(0)
+        # Mittelfeld erstellen
+        KartenMitte = classes.Mitte(0)
 
-    # erste Karten austeilen
-    AlleSpieler, Deck = Kartengeben(AlleSpieler, 2, Deck)
+        # erste Karten austeilen
+        AlleSpieler, Deck = Kartengeben(AlleSpieler, 2, Deck)
 
-    # Preflop spielen
-    KartenMitte, AlleSpieler = AlleSpielerGleichziehen(AlleSpieler, True, KartenMitte)
+        # Preflop spielen
+        KartenMitte, AlleSpieler = AlleSpielerGleichziehen(AlleSpieler, True, KartenMitte)
 
-    # Flop
-    KartenMittenliste, Deck = Kartengeben([KartenMitte], 3, Deck)
-    KartenMitte = KartenMittenliste[0]
-    KartenMitte, AlleSpieler = AlleSpielerGleichziehen(AlleSpieler, False, KartenMitte)
+        # Flop
+        KartenMittenliste, Deck = Kartengeben([KartenMitte], 3, Deck)
+        KartenMitte = KartenMittenliste[0]
+        KartenMitte, AlleSpieler = AlleSpielerGleichziehen(AlleSpieler, False, KartenMitte)
 
-    # Turn
-    KartenMittenliste, Deck = Kartengeben([KartenMitte], 1, Deck)
-    KartenMitte = KartenMittenliste[0]
-    KartenMitte, AlleSpieler = AlleSpielerGleichziehen(AlleSpieler, False, KartenMitte)
+        # Turn
+        KartenMittenliste, Deck = Kartengeben([KartenMitte], 1, Deck)
+        KartenMitte = KartenMittenliste[0]
+        KartenMitte, AlleSpieler = AlleSpielerGleichziehen(AlleSpieler, False, KartenMitte)
 
-    # River
-    KartenMittenliste, Deck = Kartengeben([KartenMitte], 1, Deck)
-    KartenMitte = KartenMittenliste[0]
-    KartenMitte, AlleSpieler = AlleSpielerGleichziehen(AlleSpieler, False, KartenMitte)
+        # River
+        KartenMittenliste, Deck = Kartengeben([KartenMitte], 1, Deck)
+        KartenMitte = KartenMittenliste[0]
+        KartenMitte, AlleSpieler = AlleSpielerGleichziehen(AlleSpieler, False, KartenMitte)
 
-    # Gewinner bestimmen
-    AlleGewinner = WerGewinnt(AlleSpieler, KartenMitte)
-    for Gewinner in AlleGewinner:
-        print(f'{Gewinner.get_Name()} gewinnt {KartenMitte.get_Chips() // len(AlleGewinner)} Chips')
-        Gewinner.add_Chips(KartenMitte.get_Chips() // len(AlleGewinner))
-    
-    
-    for Player in AlleSpieler:
-        print(f'{Player.get_Name()} hat {Player.get_Chips()} Chips')
-        Player.clear_Karten()
-        Player.set_IstDrin(True)
-        Player.set_ChipsGesetzt(0)
-        Player.set_Hand(None)
-        Player.rotiere_Position(SpielerAnzahl)
+        # Gewinner bestimmen
+        AlleGewinner = WerGewinnt(AlleSpieler, KartenMitte)
+        for Gewinner in AlleGewinner:
+            print(f'{Gewinner.get_Name()} gewinnt {KartenMitte.get_Chips() // len(AlleGewinner)} Chips')
+            Gewinner.add_Chips(KartenMitte.get_Chips() // len(AlleGewinner))
         
-    Beenden = input('Soll das Spiel beendet werden: ')
-    if Beenden == 'ja':
-        break
-    
-Gewinner = AlleSpieler[0]
-for Player in AlleSpieler:
-    if Player.get_Chips() > Gewinner.get_Chips():
-        Gewinner = Player
-print(f'{Gewinner.get_Name()} gewinnt das Spiel mit {Gewinner.get_Chips()} Chips')    
+        
+        for Player in AlleSpieler:
+            print(f'{Player.get_Name()} hat {Player.get_Chips()} Chips')
+            Player.clear_Karten()
+            Player.set_IstDrin(True)
+            Player.set_ChipsGesetzt(0)
+            Player.set_Hand(None)
+            Player.rotiere_Position(SpielerAnzahl)
+            
+        Beenden = input('Soll das Spiel beendet werden: ')
+        if Beenden == 'ja':
+            break
+        
+    Gewinner = AlleSpieler[0]
+    for Player in AlleSpieler:
+        if Player.get_Chips() > Gewinner.get_Chips():
+            Gewinner = Player
+    print(f'{Gewinner.get_Name()} gewinnt das Spiel mit {Gewinner.get_Chips()} Chips')
+
+
+if __name__ == "__main__":
+    KonsolenspielStarten()
