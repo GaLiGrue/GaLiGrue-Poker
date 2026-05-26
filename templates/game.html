@@ -562,6 +562,7 @@
         ["soundEnabled", "sfxVolume", "musicVolume"].forEach(bindSetting);
 
         const backgroundMusic = document.getElementById("backgroundMusic");
+        const musicTimeKey = "backgroundMusicTime";
 
         function setMusicVolume(){
             if(!backgroundMusic){
@@ -578,6 +579,28 @@
                 return;
             }
             backgroundMusic.play().catch(() => {});
+        }
+
+        if(backgroundMusic){
+            backgroundMusic.addEventListener("loadedmetadata", () => {
+                const savedTime = Number(localStorage.getItem(musicTimeKey) || 0);
+                if(savedTime > 0 && savedTime < backgroundMusic.duration){
+                    backgroundMusic.currentTime = savedTime;
+                }
+            });
+            backgroundMusic.addEventListener("timeupdate", () => {
+                if(Number.isFinite(backgroundMusic.currentTime)){
+                    localStorage.setItem(musicTimeKey, backgroundMusic.currentTime);
+                }
+            });
+            backgroundMusic.addEventListener("ended", () => {
+                localStorage.setItem(musicTimeKey, 0);
+            });
+            window.addEventListener("beforeunload", () => {
+                if(Number.isFinite(backgroundMusic.currentTime)){
+                    localStorage.setItem(musicTimeKey, backgroundMusic.currentTime);
+                }
+            });
         }
 
         setMusicVolume();
