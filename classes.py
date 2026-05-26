@@ -95,6 +95,7 @@ class Spiel:
         self.__Gewinner = None
         self.__LetzteAktion = None
         self.__Gestartet = False
+        self.__BlindIndex = 0
 
     def get_Id(self):
         return self.__Id
@@ -158,6 +159,10 @@ class Spiel:
         return self.__Gestartet
     def set_Gestartet(self, Value):
         self.__Gestartet = Value
+    def get_BlindIndex(self):
+        return self.__BlindIndex
+    def set_BlindIndex(self, Value):
+        self.__BlindIndex = Value
     
     def erstelle_deck(self):
         '''Erstellt ein neues Kartendeck mit 52 Karten und shuffelt es.'''
