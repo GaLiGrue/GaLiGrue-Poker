@@ -60,7 +60,7 @@ def leave_current_room():
         return
 
     spieler_verlassen(game, session["user_id"])
-    if not game["players"]:
+    if not game.get_Spieler():
         games.pop(room_id, None)
 
     session.pop("room_id", None)
@@ -136,7 +136,7 @@ def join_game():
     code = f"S{session['user_id']}" if mode == "singleplayer" else room_code()
     game = spiel_erstellen(code, session["user_id"], session["username"], mode)
     games[code] = game
-    session["room_id"] = game["id"]
+    session["room_id"] = game.get_Id()
     return redirect(url_for("game"))
 
 
@@ -236,4 +236,3 @@ if __name__ == '__main__':
         db.create_all()
 
     app.run(host="0.0.0.0", port=5000, debug=True)
-
