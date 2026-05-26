@@ -4,16 +4,15 @@ Modul für die Erstellung von Spielern und Spielen.
 
 
 from classes import Player, Spiel
-from Spieler_Und_Spiel_Abfragen import aktive_spieler, aktueller_spieler, spieler_finden
 from Spielablauf import zug_weitergeben, runde_beenden
 
 # ============================================================================
 # SPIELER-Erstellung und Spiel-Erstellung
 # ============================================================================
 
-def spieler_erstellen(SpielerId, Name, Position=1):
+def spieler_erstellen(SpielerId, Name):
     """Erstellt ein Player-Objekt mit Startchips und Web-Zusatzstatus."""
-    Spieler = Player(1000, Position, Name, str(SpielerId))
+    Spieler = Player(1000, Name, str(SpielerId))
     Spieler.set_IstDrin(True)
     Spieler.set_AllIn(False)
     Spieler.set_ChipsGesetzt(0)
@@ -24,7 +23,7 @@ def spieler_erstellen(SpielerId, Name, Position=1):
 
 def spiel_erstellen(SpielId, BenutzerId, Benutzername, Modus):
     """Erstellt ein neues Spiel-Objekt mit dem angemeldeten Spieler als Host."""
-    return Spiel(SpielId, Modus, BenutzerId, [spieler_erstellen(BenutzerId, Benutzername, 1)])
+    return Spiel(SpielId, Modus, BenutzerId, [spieler_erstellen(BenutzerId, Benutzername)])
 
 # ============================================================================
 # SPIELER-VERWALTUNG
@@ -36,7 +35,7 @@ def spieler_hinzufuegen(Spiel, SpielerId, Benutzername):
     if VorhandenerSpieler:
         return VorhandenerSpieler
 
-    Spieler = spieler_erstellen(SpielerId, Benutzername, len(Spiel.get_Spieler()) + 1)
+    Spieler = spieler_erstellen(SpielerId, Benutzername)
     Spiel.get_Spieler().append(Spieler)
     Spiel.set_Nachricht(f"{Benutzername} ist dem Tisch beigetreten.")
     return Spieler
@@ -67,6 +66,13 @@ def spieler_verlassen(Spiel, SpielerId):
 # SPIEL- UND SPIELER-ABFRAGEN
 # ============================================================================
 
+def aktueller_spieler(Spiel):
+    """Gibt den Spieler zurueck, der laut turn_index gerade am Zug ist."""
+    if not Spiel.get_Spieler():
+        return None
+    return Spiel.get_Spieler()[Spiel.get_ZugIndex() % len(Spiel.get_Spieler())]
+
+
 def kann_spiel_beitreten(Spiel):
     """Prueft, ob ein Multiplayer-Spiel noch nicht gestartet und nicht voll ist."""
     return bool(Spiel and not Spiel.get_Gestartet() and len(Spiel.get_Spieler()) < 6)
@@ -79,8 +85,6 @@ def kann_spiel_starten(Spiel, SpielerId):
         and len([Spieler for Spieler in Spiel.get_Spieler() if Spieler.get_Chips() > 0]) >= 2
     )
     
-
-
 
 def spieler_finden(Spiel, SpielerId):
     """Sucht einen Spieler im Spiel ueber seine ID."""
@@ -111,6 +115,10 @@ def spieler_ist_raus(Spiel, SpielerId):
     """Prueft, ob ein Spieler keine Chips mehr hat."""
     BenutzerSpieler = spieler_finden(Spiel, SpielerId)
     return bool(BenutzerSpieler and BenutzerSpieler.get_Chips() <= 0)
+
+def aktive_spieler(Spiel):
+    """Gibt alle Spieler zurueck, die nicht gefoldet haben und noch im Spiel sind."""
+    return [Spieler for Spieler in Spiel.get_Spieler() if Spieler.get_IstDrin() and Spieler.get_Chips() >= 0 and not Spieler.get_Eliminiert()]
 
 # ============================================================================
 # SPIELER-AKTIONEN
