@@ -4,7 +4,7 @@ Keine Website-Verwaltung oder Spielfluss-Logik.
 """
 
 from classes import Karte, Mitte, Player
-from Spieler_Und_Spiel_Verwaltung import aktueller_spieler, aktive_spieler
+from Spiel_Helfer import aktueller_spieler, aktive_spieler
 
 FARBEN = {
     "k": {"name": "clubs", "symbol": "Kreuz"},
@@ -60,13 +60,16 @@ def gewinner_bestimmen(AlleSpieler, KartenMitte, Debug=False):
                 return True, 5
             return False, None
 
+        def wert_aus_index(Index):
+            return 14 - Index
+
         def get_Beikarten(WertZaehler, Anzahl, Ausgeschlossen=None):
             if Ausgeschlossen is None:
                 Ausgeschlossen = []
             Beikarten = []
             for Index in range(13):
-                if Index not in Ausgeschlossen and WertZaehler[Index] == 1:
-                    Beikarten.append(Index)
+                if Index not in Ausgeschlossen and WertZaehler[Index] > 0:
+                    Beikarten.append(wert_aus_index(Index))
                     if len(Beikarten) == Anzahl:
                         break
             return Beikarten
@@ -101,16 +104,20 @@ def gewinner_bestimmen(AlleSpieler, KartenMitte, Debug=False):
                 break
 
         if Strasse and Flush:
-            StrassenFlush, HoechsteStrassenFlushKarte = has_Straight(FlushKarten)
+            StrassenFlush, HoechsteStrassenFlushKarte = has_Straight(FarbKopie)
             if StrassenFlush:
                 return [0, HoechsteStrassenFlushKarte]
 
         if 4 in WertZaehler:
             Beikarten = get_Beikarten(WertZaehler, 1, Ausgeschlossen=[WertZaehler.index(4)])
-            return [1, WertZaehler.index(4)] + Beikarten
+            return [1, wert_aus_index(WertZaehler.index(4))] + Beikarten
 
-        if 3 in WertZaehler and 2 in WertZaehler:
-            return [2, WertZaehler.index(3), WertZaehler.index(2)]
+        Drillinge = [Index for Index, Anzahl in enumerate(WertZaehler) if Anzahl == 3]
+        Paare = [Index for Index, Anzahl in enumerate(WertZaehler) if Anzahl >= 2]
+        if Drillinge and len(Paare) >= 2:
+            Drilling = Drillinge[0]
+            Paar = next(Index for Index in Paare if Index != Drilling)
+            return [2, wert_aus_index(Drilling), wert_aus_index(Paar)]
 
         if Flush:
             return [3, FlushKarten[0].get_Value(), FlushKarten[1].get_Value(), FlushKarten[2].get_Value(), FlushKarten[3].get_Value(), FlushKarten[4].get_Value()]
@@ -120,15 +127,17 @@ def gewinner_bestimmen(AlleSpieler, KartenMitte, Debug=False):
 
         if 3 in WertZaehler:
             Beikarten = get_Beikarten(WertZaehler, 2, Ausgeschlossen=[WertZaehler.index(3)])
-            return [5, WertZaehler.index(3)] + Beikarten
+            return [5, wert_aus_index(WertZaehler.index(3))] + Beikarten
 
         if WertZaehler.count(2) >= 2:
-            Beikarten = get_Beikarten(WertZaehler, 1, Ausgeschlossen=[WertZaehler.index(2), WertZaehler.index(2, WertZaehler.index(2) + 1)])
-            return [6, WertZaehler.index(2), WertZaehler.index(2, WertZaehler.index(2) + 1)] + Beikarten
+            PaarIndex1 = WertZaehler.index(2)
+            PaarIndex2 = WertZaehler.index(2, PaarIndex1 + 1)
+            Beikarten = get_Beikarten(WertZaehler, 1, Ausgeschlossen=[PaarIndex1, PaarIndex2])
+            return [6, wert_aus_index(PaarIndex1), wert_aus_index(PaarIndex2)] + Beikarten
 
         if 2 in WertZaehler:
             Beikarten = get_Beikarten(WertZaehler, 3, Ausgeschlossen=[WertZaehler.index(2)])
-            return [7, WertZaehler.index(2)] + Beikarten
+            return [7, wert_aus_index(WertZaehler.index(2))] + Beikarten
 
         Beikarten = get_Beikarten(WertZaehler, 5)
         return [8] + Beikarten
@@ -287,7 +296,7 @@ def runde_beenden(Spiel):
         Ergebnis = None
     else:
         # Gewinner direkt bestimmen mit gewinner_bestimmen
-        KartenMitte = Mitte(0)
+        KartenMitte = Mitte()
         KartenMitte.add_Karten([Karte(Name) for Name in Spiel.get_Gemeinschaftskarten()])
         GewinnerSpieler, Ergebnis = gewinner_bestimmen(Kandidaten, KartenMitte)
         Gewinner = GewinnerSpieler[0] if GewinnerSpieler else Kandidaten[0]
