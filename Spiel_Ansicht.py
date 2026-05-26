@@ -2,7 +2,7 @@
 In diesem Modul wird die Funktion definiert, die die Datenstruktur für die Spielansicht erstellt, damit das Template sie rendern kann.
 """
 
-from Spieler_Und_Spiel_Verwaltung import aktueller_spieler, spieler_finden
+from Spiel_Helfer import aktueller_spieler, spieler_finden
 from Kartenverwaltung import oeffentliche_karte
 
 def spiel_ansicht_erstellen(Spiel, BenutzerId):
