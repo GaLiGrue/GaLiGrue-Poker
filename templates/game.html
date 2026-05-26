@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% if game.mode == "multiplayer" and (not game.started or not game.user_can_act) and not game.winner %}
+    {% if game.mode == "multiplayer" and (not game.user_can_act or not game.started) and (not game.winner or not game.is_host) %}
         <meta http-equiv="refresh" content="3">
     {% endif %}
     <title>Poker Tisch</title>
