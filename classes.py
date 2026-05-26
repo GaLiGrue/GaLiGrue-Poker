@@ -192,13 +192,13 @@ class Karte:
         value = self.get_Value()
 
         if value <= 10:
-            value_name = str(value - 1)
+            filename = f"card_{value - 1}.svg"
         elif value == 11:
-            value_name = "jack"
+            filename = "jack.svg"
         elif value == 12:
-            value_name = "queen"
+            filename = "queen.svg"
         elif value == 13:
-            value_name = "king"
+            filename = "king.svg"
         elif value == 14:
-            value_name = "ace"
-        return f"cards/{suit_folder}/card_{value_name}.svg"
+            filename = "ace.svg"
+        return f"cards/{suit_folder}/{filename}"
