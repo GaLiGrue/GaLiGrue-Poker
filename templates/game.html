@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if game.mode == "multiplayer" and (not game.started or not game.user_can_act) and not game.winner %}
+        <meta http-equiv="refresh" content="3">
+    {% endif %}
+    <title>Poker Tisch</title>
+
+    <style>
+        *{
+            box-sizing:border-box;
+        }
+
+        body{
+            margin:0;
+            min-height:100dvh;
+            background:#111827;
+            color:white;
+            font-family:Arial, sans-serif;
+            overflow:hidden;
+        }
+
+        .game-shell{
+            height:100dvh;
+            display:grid;
+            grid-template-columns:minmax(0, 1fr) clamp(300px, 22vw, 380px);
+            background:
+                radial-gradient(circle at 20% 20%, rgba(20, 184, 166, 0.22), transparent 32%),
+                linear-gradient(135deg, #0f172a, #1f2937 45%, #111827);
+        }
+
+        .table-area{
+            position:relative;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            min-height:0;
+            padding:0;
+            overflow:hidden;
+        }
+
+        .table-scroll{
+            width:100%;
+            height:100%;
+        }
+
+        .table{
+            position:relative;
+            width:100%;
+            height:100%;
+            min-height:620px;
+            background:url("{{ url_for('table_asset') }}") center/100% 100% no-repeat;
+        }
+
+        .community{
+            position:absolute;
+            left:50%;
+            top:45%;
+            transform:translate(-50%, -50%);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:12px;
+            min-width:520px;
+            min-height:150px;
+        }
+
+        .empty-card,
+        .card-img{
+            width:100px;
+            aspect-ratio:0.71;
+            border-radius:7px;
+            filter:drop-shadow(0 10px 10px rgba(0,0,0,.35));
+        }
+
+        .empty-card{
+            border:2px dashed rgba(255,255,255,.35);
+            background:rgba(255,255,255,.08);
+        }
+
+        .pot{
+            position:absolute;
+            left:50%;
+            top:60%;
+            transform:translateX(-50%);
+            display:flex;
+            align-items:center;
+            gap:8px;
+            padding:8px 14px;
+            border-radius:999px;
+            background:rgba(3, 7, 18, .72);
+            border:1px solid rgba(255,255,255,.18);
+            font-weight:bold;
+            white-space:nowrap;
+        }
+
+        .chip{
+            width:38px;
+            height:38px;
+        }
+
+        .seat{
+            position:absolute;
+            width:220px;
+            padding:12px;
+            border-radius:8px;
+            background:rgba(15, 23, 42, .78);
+            border:1px solid rgba(255,255,255,.16);
+            box-shadow:0 10px 30px rgba(0,0,0,.22);
+        }
+
+        .seat.local-player{
+            width:300px;
+            background:rgba(20, 83, 45, .82);
+            border-color:rgba(74, 222, 128, .45);
+        }
+
+        .seat.current-turn{
+            outline:3px solid #facc15;
+            box-shadow:0 0 0 6px rgba(250, 204, 21, .18), 0 10px 30px rgba(0,0,0,.22);
+        }
+
+        .seat-0{
+            left:50%;
+            bottom:4%;
+            transform:translateX(-50%);
+        }
+
+        .seat-1{
+            left:4%;
+            top:44%;
+            transform:translateY(-50%);
+        }
+
+        .seat-2{
+            left:50%;
+            top:4%;
+            transform:translateX(-50%);
+        }
+
+        .seat-3{
+            right:4%;
+            top:44%;
+            transform:translateY(-50%);
+        }
+
+        .seat-4{
+            left:13%;
+            bottom:13%;
+        }
+
+        .seat-5{
+            right:13%;
+            bottom:13%;
+        }
+
+        .seat-header{
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            font-size:14px;
+            font-weight:bold;
+            margin-bottom:8px;
+        }
+
+        .seat-meta{
+            color:#d1d5db;
+            font-size:13px;
+        }
+
+        .seat-cards{
+            display:flex;
+            gap:8px;
+            min-height:94px;
+            align-items:center;
+        }
+
+        .seat .card-img,
+        .card-back{
+            width:62px;
+            aspect-ratio:0.71;
+            border-radius:5px;
+        }
+
+        .card-back{
+            display:block;
+            background:linear-gradient(135deg, #7f1d1d, #dc2626);
+            border:2px solid rgba(255,255,255,.85);
+            box-shadow:inset 0 0 0 4px rgba(255,255,255,.16);
+        }
+
+        .seat.local-player .card-img{
+            width:88px;
+        }
+
+        .chips-row{
+            display:flex;
+            align-items:center;
+            gap:4px;
+            min-height:26px;
+            margin-top:8px;
+        }
+
+        .chips-row .chip{
+            width:28px;
+            height:28px;
+        }
+
+        .side-panel{
+            min-height:100dvh;
+            padding:24px;
+            background:rgba(3, 7, 18, .74);
+            border-left:1px solid rgba(255,255,255,.12);
+            display:flex;
+            flex-direction:column;
+            gap:18px;
+            overflow:auto;
+        }
+
+        .lost-screen{
+            padding:18px;
+            border-radius:8px;
+            background:rgba(127, 29, 29, .72);
+            border:1px solid rgba(248, 113, 113, .45);
+        }
+
+        .panel-title{
+            margin:0;
+            font-size:26px;
+        }
+
+        .status{
+            padding:14px;
+            border-radius:8px;
+            background:rgba(255,255,255,.08);
+            border:1px solid rgba(255,255,255,.12);
+            line-height:1.45;
+        }
+
+        .room-code{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            min-width:82px;
+            margin-left:6px;
+            padding:4px 8px;
+            border-radius:6px;
+            background:#f9fafb;
+            color:#111827;
+            font-weight:bold;
+            letter-spacing:0;
+        }
+
+        .turn-banner{
+            padding:12px 14px;
+            border-radius:8px;
+            background:rgba(250, 204, 21, .16);
+            border:1px solid rgba(250, 204, 21, .38);
+            font-weight:bold;
+        }
+
+        .actions{
+            display:grid;
+            gap:10px;
+        }
+
+        .settings-grid{
+            display:grid;
+            gap:10px;
+        }
+
+        .settings-row{
+            display:grid;
+            gap:6px;
+            font-size:14px;
+        }
+
+        .settings-row input[type="range"]{
+            width:100%;
+        }
+
+        .toggle-row{
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+
+        .btn{
+            width:100%;
+            border:0;
+            border-radius:8px;
+            padding:12px 14px;
+            font-weight:bold;
+            cursor:pointer;
+            color:#111827;
+            background:#f9fafb;
+            transition:transform .18s, background .18s;
+        }
+
+        .btn:disabled{
+            cursor:not-allowed;
+            opacity:.45;
+            transform:none;
+        }
+
+        .btn:hover{
+            transform:translateY(-1px);
+            background:#e5e7eb;
+        }
+
+        .btn.danger{
+            background:#f87171;
+            color:white;
+        }
+
+        .btn.primary{
+            background:#34d399;
+            color:#052e16;
+        }
+
+        .raise-form{
+            display:grid;
+            grid-template-columns:1fr auto;
+            gap:8px;
+        }
+
+        .raise-form input{
+            min-width:0;
+            border:1px solid rgba(255,255,255,.18);
+            border-radius:8px;
+            padding:0 10px;
+            background:rgba(255,255,255,.08);
+            color:white;
+        }
+
+        .link{
+            color:#d1fae5;
+            text-decoration:none;
+            font-weight:bold;
+        }
+
+        @media (max-width: 920px){
+            body{
+                overflow:auto;
+            }
+
+            .game-shell{
+                height:auto;
+                min-height:100dvh;
+                grid-template-columns:1fr;
+            }
+
+            .table-area{
+                height:72dvh;
+            }
+
+            .side-panel{
+                min-height:auto;
+                border-left:0;
+                border-top:1px solid rgba(255,255,255,.12);
+            }
+
+            .table{
+                width:1000px;
+                min-width:1000px;
+                height:100%;
+            }
+
+            .table-scroll{
+                width:100%;
+                height:100%;
+                overflow-x:auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="game-shell">
+        <section class="table-area">
+            <div class="table-scroll">
+                <div class="table">
+                    <div class="community" aria-label="Gemeinschaftskarten">
+                        {% for card in game.community_cards %}
+                            <img class="card-img" src="/{{ card.image }}" alt="{{ card.label }}">
+                        {% endfor %}
+                        {% for _ in range(5 - game.community_cards|length) %}
+                            <div class="empty-card"></div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="pot">
+                        <img class="chip" src="{{ url_for('chips', filename='chip_3.svg') }}" alt="">
+                        Pot: {{ game.pot }} Chips
+                    </div>
+
+                    {% for player in game.players %}
+                        <article class="seat seat-{{ loop.index0 }} {% if player.is_user %}local-player{% endif %} {% if player.is_current %}current-turn{% endif %}">
+                            <div class="seat-header">
+                                <span>{{ player.name }}</span>
+                                <span>{{ player.chips }} Chips</span>
+                            </div>
+                            <div class="seat-meta">
+                                {% if player.folded %}Fold{% elif player.bet %}Gesetzt: {{ player.bet }}{% else %}Im Spiel{% endif %}
+                            </div>
+                            <div class="seat-cards">
+                                {% for card in player.visual_cards %}
+                                    {% if not player.is_user and game.stage != "showdown" %}
+                                        <span class="card-back"></span>
+                                    {% else %}
+                                        <img class="card-img" src="/{{ card.image }}" alt="{{ card.label }}">
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="chips-row" aria-label="Chipstapel">
+                                {% for _ in player.chip_icons %}
+                                    <img class="chip" src="{{ url_for('chips', filename='chip_2.svg') }}" alt="">
+                                {% endfor %}
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <aside class="side-panel">
+            <div>
+                <h1 class="panel-title">Poker Tisch</h1>
+                <p>
+                    Angemeldet als {{ username }}
+                    {% if game.mode == "multiplayer" %}
+                        <br>Raumcode <span class="room-code">{{ game.id }}</span>
+                    {% endif %}
+                </p>
+            </div>
+
+            {% if game.started and game.current_player %}
+                <div class="turn-banner">
+                    Am Zug: {{ game.current_player.name }}
+                    {% if game.current_player.id == game.user_player_id %}(du){% endif %}
+                </div>
+            {% endif %}
+
+            <div class="status">
+                <strong>Status:</strong> {{ game.stage|capitalize }}<br>
+                {{ game.message }}
+                {% if game.last_action %}
+                    <br>{{ game.last_action }}
+                {% endif %}
+            </div>
+
+            {% if game.user_lost %}
+                <div class="lost-screen">
+                    <h2>Du hast verloren</h2>
+                    <p>Du hast keine Chips mehr und bekommst keine neuen Chips in dieser Runde.</p>
+                    <form method="POST" action="{{ url_for('leave_game') }}">
+                        <button class="btn danger">Zurueck ins Startmenue</button>
+                    </form>
+                </div>
+            {% elif not game.started %}
+                <div class="status">
+                    Spieler am Tisch: {{ game.players|length }}<br>
+                    Teile den Raumcode mit deinen Freunden. Der Host startet, sobald mindestens 2 Spieler drin sind.
+                </div>
+                {% if game.is_host %}
+                    <form method="POST" action="{{ url_for('start_game') }}">
+                        <button class="btn primary" {% if game.players|length < 2 %}disabled{% endif %}>Runde starten</button>
+                    </form>
+                {% else %}
+                    <div class="status">Warte darauf, dass der Host die Runde startet.</div>
+                {% endif %}
+            {% elif game.winner %}
+                <form method="POST" action="{{ url_for('new_round') }}">
+                    <button class="btn primary" {% if game.mode == "multiplayer" and not game.is_host %}disabled{% endif %}>
+                        Neue Runde
+                    </button>
+                </form>
+            {% else %}
+                <div class="actions">
+                    <form method="POST" action="{{ url_for('game_action') }}">
+                        <input type="hidden" name="action" value="call">
+                        <button class="btn primary" {% if not game.user_can_act %}disabled{% endif %}>
+                            {% if game.to_call > 0 %}Call {{ game.to_call }}{% else %}Check{% endif %}
+                        </button>
+                    </form>
+
+                    <form class="raise-form" method="POST" action="{{ url_for('game_action') }}">
+                        <input type="hidden" name="action" value="raise">
+                        <input type="number" name="raise_amount" min="25" max="1000" step="25" value="50" {% if not game.user_can_act %}disabled{% endif %}>
+                        <button class="btn" {% if not game.user_can_act %}disabled{% endif %}>Raise</button>
+                    </form>
+
+                    <form method="POST" action="{{ url_for('game_action') }}">
+                        <input type="hidden" name="action" value="fold">
+                        <button class="btn danger" {% if not game.user_can_act %}disabled{% endif %}>Fold</button>
+                    </form>
+
+                    <form method="POST" action="{{ url_for('game_action') }}">
+                        <input type="hidden" name="action" value="all_in">
+                        <button class="btn danger" {% if not game.user_can_act %}disabled{% endif %}>All-in</button>
+                    </form>
+                </div>
+                {% if not game.user_can_act %}
+                    <div class="status">Du wartest gerade auf {{ game.current_player.name }}.</div>
+                {% endif %}
+            {% endif %}
+
+            <div class="status settings-grid">
+                <strong>Settings</strong>
+                <label class="toggle-row">
+                    <input id="soundEnabled" type="checkbox">
+                    Sounds aktiv
+                </label>
+                <label class="settings-row">
+                    Soundeffekte
+                    <input id="sfxVolume" type="range" min="0" max="100">
+                </label>
+                <label class="settings-row">
+                    Musik
+                    <input id="musicVolume" type="range" min="0" max="100">
+                </label>
+            </div>
+
+            <form method="POST" action="{{ url_for('leave_game') }}">
+                <button class="btn">Zurueck zum Menu</button>
+            </form>
+            <a class="link" href="{{ url_for('logout') }}">Logout</a>
+        </aside>
+    </main>
+    <script>
+        const settingsDefaults = {
+            soundEnabled: "true",
+            sfxVolume: "75",
+            musicVolume: "20"
+        };
+
+        function settingValue(name){
+            return localStorage.getItem(name) ?? settingsDefaults[name];
+        }
+
+        function bindSetting(id){
+            const element = document.getElementById(id);
+            if(!element){
+                return;
+            }
+            if(element.type === "checkbox"){
+                element.checked = settingValue(id) === "true";
+                element.addEventListener("change", () => localStorage.setItem(id, element.checked));
+            }else{
+                element.value = settingValue(id);
+                element.addEventListener("input", () => localStorage.setItem(id, element.value));
+            }
+        }
+
+        ["soundEnabled", "sfxVolume", "musicVolume"].forEach(bindSetting);
+
+        function playTone(type){
+            if(settingValue("soundEnabled") !== "true"){
+                return;
+            }
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const volume = Number(settingValue("sfxVolume")) / 100;
+            const frequencies = {
+                card: 520,
+                chips: 280,
+                turn: 720,
+                win: 880
+            };
+            oscillator.frequency.value = frequencies[type] || 440;
+            oscillator.type = type === "chips" ? "square" : "sine";
+            gain.gain.value = 0.0001;
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+            oscillator.start();
+            gain.gain.exponentialRampToValueAtTime(0.18 * volume, audioContext.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.18);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        }
+
+        const eventKey = "{{ game.event_key }}";
+        const previousEventKey = localStorage.getItem("pokerEventKey");
+        if(previousEventKey && previousEventKey !== eventKey){
+            if("{{ game.winner }}"){
+                playTone("win");
+            }else if("{{ game.last_action }}"){
+                playTone("chips");
+            }else{
+                playTone("card");
+            }
+        }
+        localStorage.setItem("pokerEventKey", eventKey);
+
+    </script>
+</body>
+</html>
