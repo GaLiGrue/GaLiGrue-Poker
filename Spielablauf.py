@@ -227,6 +227,7 @@ def hand_starten(Spiel):
 
         SmallBlindGezahlt = blind_setzen(SmallBlindSpieler, SMALL_BLIND)
         BigBlindGezahlt = blind_setzen(BigBlindSpieler, BIG_BLIND)
+        BigBlindSpieler.set_Gehandelt(True)
 
         Spiel.set_AktuellerEinsatz(max(SmallBlindGezahlt, BigBlindGezahlt))
         Spiel.set_BlindIndex((BlindIndex + 1) % len(SpielerListe))
