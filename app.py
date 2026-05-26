@@ -7,10 +7,10 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-from Spieler_Und_Spiel_Abfragen import kann_spiel_beitreten, kann_spiel_starten, hand_starten, spieler_aktion_per_id_ausfuehren, kann_neue_runde_starten, spieler_ist_raus
+from Spieler_Und_Spiel_Abfragen import kann_spiel_beitreten, kann_spiel_starten, kann_neue_runde_starten, spieler_ist_raus
 from Spiel_Ansicht import spiel_ansicht_erstellen
-from Spieler_Und_Spiel_Verwaltung import spieler_hinzufuegen, spieler_verlassen, spiel_erstellen
-
+from Spieler_Und_Spiel_Verwaltung import spieler_hinzufuegen, spieler_verlassen, spiel_erstellen, spieler_aktion_per_id_ausfuehren
+from Spielablauf import hand_starten
 app = Flask(__name__)
 
 app.secret_key = "supersecretkey"
