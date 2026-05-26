@@ -4,6 +4,7 @@ Modul für die Erstellung von Spielern und Spielen.
 
 
 from classes import Player, Spiel
+from Spiel_Helfer import aktueller_spieler, aktive_spieler, spieler_finden
 from Spielablauf import zug_weitergeben, runde_beenden
 
 # ============================================================================
@@ -66,13 +67,6 @@ def spieler_verlassen(Spiel, SpielerId):
 # SPIEL- UND SPIELER-ABFRAGEN
 # ============================================================================
 
-def aktueller_spieler(Spiel):
-    """Gibt den Spieler zurueck, der laut turn_index gerade am Zug ist."""
-    if not Spiel.get_Spieler():
-        return None
-    return Spiel.get_Spieler()[Spiel.get_ZugIndex() % len(Spiel.get_Spieler())]
-
-
 def kann_spiel_beitreten(Spiel):
     """Prueft, ob ein Multiplayer-Spiel noch nicht gestartet und nicht voll ist."""
     return bool(Spiel and not Spiel.get_Gestartet() and len(Spiel.get_Spieler()) < 6)
@@ -85,12 +79,6 @@ def kann_spiel_starten(Spiel, SpielerId):
         and len([Spieler for Spieler in Spiel.get_Spieler() if Spieler.get_Chips() > 0]) >= 2
     )
     
-
-def spieler_finden(Spiel, SpielerId):
-    """Sucht einen Spieler im Spiel ueber seine ID."""
-    SpielerId = str(SpielerId)
-    return next((Spieler for Spieler in Spiel.get_Spieler() if Spieler.get_ClientName() == SpielerId), None)
-
 
 def kann_spieler_handeln(Spiel, SpielerId):
     """Prueft, ob der angegebene Spieler gerade eine Aktion ausfuehren darf."""
@@ -115,10 +103,6 @@ def spieler_ist_raus(Spiel, SpielerId):
     """Prueft, ob ein Spieler keine Chips mehr hat."""
     BenutzerSpieler = spieler_finden(Spiel, SpielerId)
     return bool(BenutzerSpieler and BenutzerSpieler.get_Chips() <= 0)
-
-def aktive_spieler(Spiel):
-    """Gibt alle Spieler zurueck, die nicht gefoldet haben und noch im Spiel sind."""
-    return [Spieler for Spieler in Spiel.get_Spieler() if Spieler.get_IstDrin() and Spieler.get_Chips() >= 0 and not Spieler.get_Eliminiert()]
 
 # ============================================================================
 # SPIELER-AKTIONEN
