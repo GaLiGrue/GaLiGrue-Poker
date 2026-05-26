@@ -32,6 +32,9 @@ HAND_NAMEN = {
     8: "High Card",
 }
 
+SMALL_BLIND = 25
+BIG_BLIND = 50
+
 
 # ============================================================================
 # GEWINNER-BESTIMMUNG (reine Poker-Logik)
@@ -189,7 +192,7 @@ def naechster_aktiver_index(Spiel, StartIndex):
     for Abstand in range(len(Spiel.get_Spieler())):
         Index = (StartIndex + Abstand) % len(Spiel.get_Spieler())
         Spieler = Spiel.get_Spieler()[Index]
-        if Spieler.get_IstDrin() and not Spieler.get_Eliminiert() and (Spieler.get_Chips() > 0 or Spieler.get_AllIn()):
+        if Spieler.get_IstDrin() and not Spieler.get_Eliminiert() and Spieler.get_Chips() > 0 and not Spieler.get_AllIn():
             return Index
     return 0
 
@@ -207,13 +210,44 @@ def hand_starten(Spiel):
                     else:
                         Ziel["cards"].append(KarteObjekt.get_Name())
         return Deck
+
+    def blind_setzen(Spieler, Betrag):
+        Gezahlt = min(Betrag, Spieler.get_Chips())
+        Spieler.add_Chips(-Gezahlt)
+        Spieler.add_ChipsGesetzt(Gezahlt)
+        Spieler.set_AllIn(Spieler.get_Chips() == 0)
+        Spiel.add_Pot(Gezahlt)
+        return Gezahlt
+
+    def blinds_setzen():
+        SpielerListe = Spiel.get_Spieler()
+        BlindIndex = Spiel.get_BlindIndex() % len(SpielerListe)
+        SmallBlindSpieler = SpielerListe[BlindIndex]
+        BigBlindSpieler = SpielerListe[(BlindIndex + 1) % len(SpielerListe)]
+
+        SmallBlindGezahlt = blind_setzen(SmallBlindSpieler, SMALL_BLIND)
+        BigBlindGezahlt = blind_setzen(BigBlindSpieler, BIG_BLIND)
+
+        Spiel.set_AktuellerEinsatz(max(SmallBlindGezahlt, BigBlindGezahlt))
+        Spiel.set_BlindIndex((BlindIndex + 1) % len(SpielerListe))
+        Spiel.set_ZugIndex(naechster_aktiver_index(Spiel, BlindIndex + 2))
+        Spiel.set_LetzteAktion(
+            f"{SmallBlindSpieler.get_Name()} setzt Small Blind ({SmallBlindGezahlt}), "
+            f"{BigBlindSpieler.get_Name()} setzt Big Blind ({BigBlindGezahlt})."
+        )
+
     Spiel.set_Spieler([Spieler for Spieler in Spiel.get_Spieler() if Spieler.get_Chips() > 0])
+    if len(Spiel.get_Spieler()) < 2:
+        Spiel.set_Gestartet(False)
+        Spiel.set_Phase("lobby")
+        Spiel.set_Nachricht("Es werden mindestens zwei Spieler mit Chips benoetigt.")
+        return
+
     Spiel.set_Deck(Spiel.erstelle_deck())
     Spiel.set_Gemeinschaftskarten([])
     Spiel.set_Pot(0)
     Spiel.set_AktuellerEinsatz(0)
     Spiel.set_Phase("preflop")
-    Spiel.set_ZugIndex(0)
     Spiel.set_Gewinner(None)
     Spiel.set_LetzteAktion(None)
     Spiel.set_Gestartet(True)
@@ -227,6 +261,7 @@ def hand_starten(Spiel):
 
     Spiel.set_Deck(karten_austeilen(Spiel.get_Spieler(), 2, Spiel.get_Deck())) # Zwei Karten an Spieler austeilen
 
+    blinds_setzen()
     Spiel.set_Nachricht(f"{aktueller_spieler(Spiel).get_Name()} ist dran.")
 
 
