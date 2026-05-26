@@ -4,7 +4,7 @@ Keine Website-Verwaltung oder Spielfluss-Logik.
 """
 
 from classes import Karte, Mitte, Player
-from Spieler_Und_Spiel_Abfragen import aktueller_spieler, aktive_spieler
+from Spieler_Und_Spiel_Verwaltung import aktueller_spieler, aktive_spieler
 
 FARBEN = {
     "k": {"name": "clubs", "symbol": "Kreuz"},
