@@ -1,2 +1,0 @@
-# GaLiGrue-Poker
-Poker beste
