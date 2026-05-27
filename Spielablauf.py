@@ -20,15 +20,15 @@ WERT_NAMEN = {
 }
 
 HAND_NAMEN = {
-    0: "Straight Flush",
-    1: "Vierling",
-    2: "Full House",
-    3: "Flush",
+    8: "Straight Flush",
+    7: "Vierling",
+    6: "Full House",
+    5: "Flush",
     4: "Straight",
-    5: "Drilling",
-    6: "Zwei Paare",
-    7: "Ein Paar",
-    8: "High Card",
+    3: "Drilling",
+    2: "Zwei Paare",
+    1: "Ein Paar",
+    0: "High Card",
 }
 
 SMALL_BLIND = 25
@@ -108,41 +108,41 @@ def gewinner_bestimmen(AlleSpieler, KartenMitte, Debug=False):
         if Strasse and Flush:
             StrassenFlush, HoechsteStrassenFlushKarte = has_Straight(FarbKopie)
             if StrassenFlush:
-                return [0, HoechsteStrassenFlushKarte]
+                return [8, HoechsteStrassenFlushKarte]
 
         if 4 in WertZaehler:
             Beikarten = get_Beikarten(WertZaehler, 1, Ausgeschlossen=[WertZaehler.index(4)])
-            return [1, wert_aus_index(WertZaehler.index(4))] + Beikarten
+            return [7, wert_aus_index(WertZaehler.index(4))] + Beikarten
 
         Drillinge = [Index for Index, Anzahl in enumerate(WertZaehler) if Anzahl == 3]
         Paare = [Index for Index, Anzahl in enumerate(WertZaehler) if Anzahl >= 2]
         if Drillinge and len(Paare) >= 2:
             Drilling = Drillinge[0]
             Paar = next(Index for Index in Paare if Index != Drilling)
-            return [2, wert_aus_index(Drilling), wert_aus_index(Paar)]
+            return [6, wert_aus_index(Drilling), wert_aus_index(Paar)]
 
         if Flush:
-            return [3, FlushKarten[0].get_Value(), FlushKarten[1].get_Value(), FlushKarten[2].get_Value(), FlushKarten[3].get_Value(), FlushKarten[4].get_Value()]
+            return [5, FlushKarten[0].get_Value(), FlushKarten[1].get_Value(), FlushKarten[2].get_Value(), FlushKarten[3].get_Value(), FlushKarten[4].get_Value()]
 
         if Strasse:
             return [4, StrassenKarte]
 
         if 3 in WertZaehler:
             Beikarten = get_Beikarten(WertZaehler, 2, Ausgeschlossen=[WertZaehler.index(3)])
-            return [5, wert_aus_index(WertZaehler.index(3))] + Beikarten
+            return [3, wert_aus_index(WertZaehler.index(3))] + Beikarten
 
         if WertZaehler.count(2) >= 2:
             PaarIndex1 = WertZaehler.index(2)
             PaarIndex2 = WertZaehler.index(2, PaarIndex1 + 1)
             Beikarten = get_Beikarten(WertZaehler, 1, Ausgeschlossen=[PaarIndex1, PaarIndex2])
-            return [6, wert_aus_index(PaarIndex1), wert_aus_index(PaarIndex2)] + Beikarten
+            return [2, wert_aus_index(PaarIndex1), wert_aus_index(PaarIndex2)] + Beikarten
 
         if 2 in WertZaehler:
             Beikarten = get_Beikarten(WertZaehler, 3, Ausgeschlossen=[WertZaehler.index(2)])
-            return [7, wert_aus_index(WertZaehler.index(2))] + Beikarten
+            return [1, wert_aus_index(WertZaehler.index(2))] + Beikarten
 
         Beikarten = get_Beikarten(WertZaehler, 5)
-        return [8] + Beikarten
+        return [0] + Beikarten
 
     Gewinner = Player(0, "temp", "temp")
     Gewinner.set_Hand([9])
@@ -153,32 +153,42 @@ def gewinner_bestimmen(AlleSpieler, KartenMitte, Debug=False):
             Karten.extend(KartenMitte.get_Karten())
             Hand = get_Hand(Karten)
             Spieler.set_Hand(Hand)
+            
+    AlleHände = [(Spieler.get_Hand(), Spieler) for Spieler in AlleSpieler if Spieler.get_IstDrin()]
+    AlleHände.sort(key=lambda x: x[0], reverse=True)  # Sortiere nach Handstärke
+    GewinnerReihenfolge = [[]]
+    AktuelleHand = AlleHände[0][0]
+    for _, Spieler in AlleHände:
+        if Spieler.get_Hand() == AktuelleHand:
+            GewinnerReihenfolge[-1].append(Spieler)
+        else:
+            GewinnerReihenfolge.append([Spieler])
+        AktuelleHand = Spieler.get_Hand()
+            # if Spieler != Gewinner:
+            #     SpielerHand = Spieler.get_Hand()
+                
+                
+                
+            #     GewinnerHand = Gewinner.get_Hand()
+            #     for Index in range(len(SpielerHand)):
+            #         if Index == 0:
+            #             if SpielerHand[Index] < GewinnerHand[Index]:
+            #                 Gewinner = Spieler
+            #                 AlleGewinner = [Gewinner]
+            #                 break
+            #             if SpielerHand[Index] > GewinnerHand[Index]:
+            #                 break
+            #         else:
+            #             if SpielerHand[Index] > GewinnerHand[Index]:
+            #                 Gewinner = Spieler
+            #                 AlleGewinner = [Gewinner]
+            #                 break
+            #             if SpielerHand[Index] < GewinnerHand[Index]:
+            #                 break
+            #     else:
+            #         AlleGewinner.append(Spieler)
 
-            if Debug:
-                print(f"{Spieler.get_Name()} hat Hand {Spieler.get_Hand()}")
-
-            if Spieler != Gewinner:
-                SpielerHand = Spieler.get_Hand()
-                GewinnerHand = Gewinner.get_Hand()
-                for Index in range(len(SpielerHand)):
-                    if Index == 0:
-                        if SpielerHand[Index] < GewinnerHand[Index]:
-                            Gewinner = Spieler
-                            AlleGewinner = [Gewinner]
-                            break
-                        if SpielerHand[Index] > GewinnerHand[Index]:
-                            break
-                    else:
-                        if SpielerHand[Index] > GewinnerHand[Index]:
-                            Gewinner = Spieler
-                            AlleGewinner = [Gewinner]
-                            break
-                        if SpielerHand[Index] < GewinnerHand[Index]:
-                            break
-                else:
-                    AlleGewinner.append(Spieler)
-
-    return AlleGewinner, HAND_NAMEN[Gewinner.get_Hand()[0]]
+    return GewinnerReihenfolge, HAND_NAMEN[Gewinner.get_Hand()[0]]
 
 
 # ============================================================================
@@ -195,13 +205,6 @@ def naechster_aktiver_index(Spiel, StartIndex):
             return Index
     return 0
 
-def handlungsfaehige_spieler(Spiel):
-    """Gibt Spieler zurueck, die in der aktuellen Hand noch Aktionen ausfuehren koennen."""
-    return [
-        Spieler
-        for Spieler in aktive_spieler(Spiel)
-        if Spieler.get_Chips() > 0 and not Spieler.get_AllIn()
-    ]
 
 def hand_starten(Spiel):
     """Setzt die Hand zurueck, mischt neu und teilt jedem aktiven Spieler zwei Karten aus."""
@@ -280,7 +283,7 @@ def naechste_phase(Spiel):
 
     for Spieler in Spiel.get_Spieler():
         Spieler.set_ChipsGesetzt(0)
-        Spieler.set_Gehandelt(Spieler.get_AllIn())
+        Spieler.set_Gehandelt(False)
     Spiel.set_AktuellerEinsatz(0)
 
     if Spiel.get_Phase() == "preflop":
@@ -300,9 +303,6 @@ def naechste_phase(Spiel):
         return
 
     Spiel.set_ZugIndex(naechster_aktiver_index(Spiel, 0))
-    if len(handlungsfaehige_spieler(Spiel)) <= 1 and any(Spieler.get_AllIn() for Spieler in aktive_spieler(Spiel)):
-        naechste_phase(Spiel)
-        return
     if aktueller_spieler(Spiel):
         Spiel.add_Nachricht(f" {aktueller_spieler(Spiel).get_Name()} ist dran.")
 
@@ -314,14 +314,7 @@ def zug_weitergeben(Spiel):
         AktiveSpieler = aktive_spieler(Spiel)
         if len(AktiveSpieler) <= 1:
             return True
-        return all(
-            Spieler.get_AllIn()
-            or (
-                Spieler.get_Gehandelt()
-                and Spieler.get_ChipsGesetzt() == Spiel.get_AktuellerEinsatz()
-            )
-            for Spieler in AktiveSpieler
-        )
+        return all(Spieler.get_Gehandelt() and (Spieler.get_ChipsGesetzt() == Spiel.get_AktuellerEinsatz() or Spieler.get_AllIn()) for Spieler in AktiveSpieler)
 
     if len(aktive_spieler(Spiel)) == 1:
         runde_beenden(Spiel)
@@ -345,19 +338,19 @@ def runde_beenden(Spiel):
     Kandidaten = aktive_spieler(Spiel)
     if len(Kandidaten) == 1:
         Gewinner = Kandidaten[0]
+        Gewinner.add_Chips(Spiel.get_Chips())
         Ergebnis = None
     else:
         # Gewinner direkt bestimmen mit gewinner_bestimmen
-        # Erstelle ein Aktionen-Objekt für die Gemeinschaftskarten
-        KartenMitte = Aktionen(0)
-        KartenMitte.add_Karten([Karte(Name) for Name in Spiel.get_Karten()])
-        GewinnerSpieler, Ergebnis = gewinner_bestimmen(Kandidaten, KartenMitte)
-        Gewinner = GewinnerSpieler[0] if GewinnerSpieler else Kandidaten[0]
+        GewinnerSpieler, Ergebnis = gewinner_bestimmen(Kandidaten, Spiel.get_Karten())
+    
+    AnzahlGewinner = len(GewinnerSpieler)
+    PotProGewinner = Spiel.get_Chips() // AnzahlGewinner if AnzahlGewinner
+    for Gewinner in GewinnerSpieler:
+        Gewinner.add_Chips(PotProGewinner)
 
-    Gewinner.add_Chips(Spiel.get_Chips())
-    for Spieler in Spiel.get_Spieler():
-        Spieler.set_Eliminiert(Spieler.get_Chips() <= 0)
-    Spiel.set_Gewinner(Gewinner.get_Name())
+    Spiel.set_Gewinner(''.join(f'{Gewinner.get_Name(), }' for Gewinner in GewinnerSpieler))
+    Spiel.set_Gewinner(Spiel.get_Ergebnis().rstrip(', '))
     Spiel.set_Phase("showdown")
     Spiel.set_Nachricht(f"{Gewinner.get_Name()} gewinnt {Spiel.get_Chips()} Chips" + (f" mit {Ergebnis}." if Ergebnis else "."))
     Spiel.set_Chips(0)
