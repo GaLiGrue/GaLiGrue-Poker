@@ -56,6 +56,7 @@ class Player(Aktionen):
     def set_ChipsGesetzt(self, Value):
         self.__ChipsGesetzt=Value
     def add_ChipsGesetzt(self, Value):
+        """ Wert auf den ChipsGesetzt addieren """
         self.__ChipsGesetzt+=Value
     def get_AllIn(self):
         return self.__AllIn
@@ -74,20 +75,18 @@ class Player(Aktionen):
     def set_Eliminiert(self, Value):
         self.__Eliminiert = Value
 
-class Mitte(Aktionen):
-    def __init__(self):
-        super().__init__(0)
-
-class Spiel:
-    def __init__(self, SpielId, Modus, HostId, SpielerListe):
+class Spiel(Aktionen):
+    def __init__(self, SpielId, Modus, HostId, SpielerListe, Pot=0, Gemeinschaftskarten=None):
         '''Konstruktor fuer die Klasse Spiel'''
+        if Gemeinschaftskarten is None:
+            Gemeinschaftskarten = []
+        super().__init__(Pot)
+        self.set_Karten(Gemeinschaftskarten)
         self.__Id = SpielId
         self.__Modus = Modus
         self.__HostId = str(HostId)
         self.__Deck = self.erstelle_deck()
         self.__Spieler = SpielerListe
-        self.__Gemeinschaftskarten = []
-        self.__Pot = 0
         self.__AktuellerEinsatz = 0
         self.__Phase = "lobby"
         self.__ZugIndex = 0
@@ -117,18 +116,6 @@ class Spiel:
         return self.__Spieler
     def set_Spieler(self, Value):
         self.__Spieler = Value
-    def get_Gemeinschaftskarten(self):
-        return self.__Gemeinschaftskarten
-    def set_Gemeinschaftskarten(self, Value):
-        self.__Gemeinschaftskarten = Value
-    def add_Gemeinschaftskarten(self, Value):
-        self.__Gemeinschaftskarten.extend(Value)
-    def get_Pot(self):
-        return self.__Pot
-    def set_Pot(self, Value):
-        self.__Pot = Value
-    def add_Pot(self, Value):
-        self.__Pot += Value
     def get_AktuellerEinsatz(self):
         return self.__AktuellerEinsatz
     def set_AktuellerEinsatz(self, Value):
@@ -186,6 +173,7 @@ class Karte:
         return self.__Value
 
     def get_image_path(self):
+        """Gibt den Pfad zum Bild der Karte zurück, basierend auf ihrem Suit und Value."""
         SUIT_MAP = {
             'k': 'clubs',
             'h': 'hearts',
