@@ -1,30 +1,30 @@
 import random
 
 class Aktionen:
-    def __init__(self,Chips):
+    def __init__(self,Chips):  # Chips: int
         '''Konstruktor für die Klasse Aktionen'''
         self.__Chips = Chips
         self.__Karten = []
 
     def get_Chips(self):
         return self.__Chips
-    def set_Chips(self, Value):
+    def set_Chips(self, Value):  # Value: int
         self.__Chips = Value
-    def add_Chips(self, Value):
+    def add_Chips(self, Value):  # Value: int
         '''Wert auf den Chips addieren'''
         self.__Chips += Value
     def get_Karten(self):
         return self.__Karten
-    def set_Karten(self,Value):
+    def set_Karten(self,Value):  # Value: list
         self.__Karten = Value
-    def add_Karten(self, Value:list):
+    def add_Karten(self, Value:list):  # Value: list
         self.__Karten.extend(Value)
     def clear_Karten(self):
         '''Die Liste der Karten leeren'''
         self.__Karten=[]
 
 class Player(Aktionen):
-    def __init__(self,Chips,Name,ClientName):
+    def __init__(self,Chips,Name,ClientName):  # Chips: int, Name: str, ClientName: str
         super().__init__(Chips)
         self.__Name = Name
         self.__Nächster = None
@@ -37,46 +37,46 @@ class Player(Aktionen):
         self.__Eliminiert = False
     def get_Name(self):
         return self.__Name
-    def set_Name(self, Value):
+    def set_Name(self, Value):  # Value: str
         self.__Name=Value
     def get_Hand(self):
         return self.__Hand
-    def set_Hand(self, Value):
+    def set_Hand(self, Value):  # Value: object
         self.__Hand=Value
     def get_Nächster(self):
         return self.__Nächster
-    def set_Nächster(self, Value):
+    def set_Nächster(self, Value):  # Value: Player or None
         self.__Nächster=Value
     def get_IstDrin(self):
         return self.__IstDrin
-    def set_IstDrin(self, Value):
+    def set_IstDrin(self, Value):  # Value: bool
         self.__IstDrin=Value
     def get_ChipsGesetzt(self):
         return self.__ChipsGesetzt
-    def set_ChipsGesetzt(self, Value):
+    def set_ChipsGesetzt(self, Value):  # Value: int
         self.__ChipsGesetzt=Value
-    def add_ChipsGesetzt(self, Value):
+    def add_ChipsGesetzt(self, Value):  # Value: int
         """ Wert auf den ChipsGesetzt addieren """
         self.__ChipsGesetzt+=Value
     def get_AllIn(self):
         return self.__AllIn
-    def set_AllIn(self, Value):
+    def set_AllIn(self, Value):  # Value: bool
         self.__AllIn = Value
     def get_ClientName(self):
         return self.__ClientName
-    def set_ClientName(self, Value):
+    def set_ClientName(self, Value):  # Value: str
         self.__ClientName=Value
     def get_Gehandelt(self):
         return self.__Gehandelt
-    def set_Gehandelt(self, Value):
+    def set_Gehandelt(self, Value):  # Value: bool
         self.__Gehandelt=Value
     def get_Eliminiert(self):
         return self.__Eliminiert
-    def set_Eliminiert(self, Value):
+    def set_Eliminiert(self, Value):  # Value: bool
         self.__Eliminiert = Value
 
 class Spiel(Aktionen):
-    def __init__(self, SpielId, Modus, HostId, SpielerListe, Pot=0, Gemeinschaftskarten=None):
+    def __init__(self, SpielId, Modus, HostId, SpielerListe, Pot=0, Gemeinschaftskarten=None):  # SpielId: int, Modus: str, HostId: str, SpielerListe: list, Pot: int, Gemeinschaftskarten: list
         '''Konstruktor fuer die Klasse Spiel'''
         if Gemeinschaftskarten is None:
             Gemeinschaftskarten = []
@@ -98,57 +98,58 @@ class Spiel(Aktionen):
 
     def get_Id(self):
         return self.__Id
-    def set_Id(self, Value):
+    def set_Id(self, Value):  # Value: int
         self.__Id = Value
     def get_Modus(self):
         return self.__Modus
-    def set_Modus(self, Value):
+    def set_Modus(self, Value):  # Value: str
         self.__Modus = Value
     def get_HostId(self):
         return self.__HostId
-    def set_HostId(self, Value):
+    def set_HostId(self, Value):  # Value: str
         self.__HostId = str(Value)
     def get_Deck(self):
         return self.__Deck
-    def set_Deck(self, Value):
+    def set_Deck(self, Value):  # Value: list
         self.__Deck = Value
     def get_Spieler(self):
         return self.__Spieler
-    def set_Spieler(self, Value):
+    def set_Spieler(self, Value):  # Value: list
         self.__Spieler = Value
     def get_AktuellerEinsatz(self):
         return self.__AktuellerEinsatz
-    def set_AktuellerEinsatz(self, Value):
+    def set_AktuellerEinsatz(self, Value):  # Value: int
         self.__AktuellerEinsatz = Value
     def get_Phase(self):
         return self.__Phase
-    def set_Phase(self, Value):
+    def set_Phase(self, Value):  # Value: str
         self.__Phase = Value
     def get_ZugIndex(self):
         return self.__ZugIndex
-    def set_ZugIndex(self, Value):
+    def set_ZugIndex(self, Value):  # Value: int
         self.__ZugIndex = Value
     def get_Nachricht(self):
         return self.__Nachricht
-    def set_Nachricht(self, Value):
+    def set_Nachricht(self, Value):  # Value: str
         self.__Nachricht = Value
-    def add_Nachricht(self, Value):
+    def add_Nachricht(self, Value):  # Value: str
+        """Fügt eine Nachricht an die bestehende Nachricht an."""
         self.__Nachricht += Value
     def get_Gewinner(self):
         return self.__Gewinner
-    def set_Gewinner(self, Value):
+    def set_Gewinner(self, Value):  # Value: str
         self.__Gewinner = Value
     def get_LetzteAktion(self):
         return self.__LetzteAktion
-    def set_LetzteAktion(self, Value):
+    def set_LetzteAktion(self, Value):  # Value: str
         self.__LetzteAktion = Value
     def get_Gestartet(self):
         return self.__Gestartet
-    def set_Gestartet(self, Value):
+    def set_Gestartet(self, Value):  # Value: bool
         self.__Gestartet = Value
     def get_BlindIndex(self):
         return self.__BlindIndex
-    def set_BlindIndex(self, Value):
+    def set_BlindIndex(self, Value):  # Value: int
         self.__BlindIndex = Value
     
     def erstelle_deck(self):
