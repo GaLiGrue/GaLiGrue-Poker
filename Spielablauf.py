@@ -1,6 +1,5 @@
 """
 Reine Poker-Spiellogik: Handvergleich, Gewinnerbewertung und Kartenevaluierung.
-Keine Website-Verwaltung oder Spielfluss-Logik.
 """
 
 from classes import Karte, Player, Aktionen
