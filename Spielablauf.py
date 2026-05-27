@@ -195,6 +195,13 @@ def naechster_aktiver_index(Spiel, StartIndex):
             return Index
     return 0
 
+def handlungsfaehige_spieler(Spiel):
+    """Gibt Spieler zurueck, die in der aktuellen Hand noch Aktionen ausfuehren koennen."""
+    return [
+        Spieler
+        for Spieler in aktive_spieler(Spiel)
+        if Spieler.get_Chips() > 0 and not Spieler.get_AllIn()
+    ]
 
 def hand_starten(Spiel):
     """Setzt die Hand zurueck, mischt neu und teilt jedem aktiven Spieler zwei Karten aus."""
@@ -273,7 +280,7 @@ def naechste_phase(Spiel):
 
     for Spieler in Spiel.get_Spieler():
         Spieler.set_ChipsGesetzt(0)
-        Spieler.set_Gehandelt(False)
+        Spieler.set_Gehandelt(Spieler.get_AllIn())
     Spiel.set_AktuellerEinsatz(0)
 
     if Spiel.get_Phase() == "preflop":
@@ -293,6 +300,9 @@ def naechste_phase(Spiel):
         return
 
     Spiel.set_ZugIndex(naechster_aktiver_index(Spiel, 0))
+    if len(handlungsfaehige_spieler(Spiel)) <= 1 and any(Spieler.get_AllIn() for Spieler in aktive_spieler(Spiel)):
+        naechste_phase(Spiel)
+        return
     if aktueller_spieler(Spiel):
         Spiel.add_Nachricht(f" {aktueller_spieler(Spiel).get_Name()} ist dran.")
 
@@ -304,7 +314,14 @@ def zug_weitergeben(Spiel):
         AktiveSpieler = aktive_spieler(Spiel)
         if len(AktiveSpieler) <= 1:
             return True
-        return all(Spieler.get_Gehandelt() and (Spieler.get_ChipsGesetzt() == Spiel.get_AktuellerEinsatz() or Spieler.get_AllIn()) for Spieler in AktiveSpieler)
+        return all(
+            Spieler.get_AllIn()
+            or (
+                Spieler.get_Gehandelt()
+                and Spieler.get_ChipsGesetzt() == Spiel.get_AktuellerEinsatz()
+            )
+            for Spieler in AktiveSpieler
+        )
 
     if len(aktive_spieler(Spiel)) == 1:
         runde_beenden(Spiel)
