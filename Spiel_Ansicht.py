@@ -59,7 +59,7 @@ def spiel_ansicht_erstellen(Spiel, BenutzerId):
         "user_can_act": bool(AktuellerSpieler and AktuellerSpieler.get_ClientName() == BenutzerId and not Spiel.get_Gewinner()),
         "to_call": ZuCallen,
         "user_lost": BenutzerHatVerloren,
-        "community_cards": [oeffentliche_karte(KarteCode) for KarteCode in Spiel.get_Gemeinschaftskarten()],
+        "community_cards": [oeffentliche_karte(KarteCode) for KarteCode in Spiel.get_Karten()],
         "event_key": "|".join([
             str(Spiel.get_Id()),
             str(Spiel.get_Phase()),
