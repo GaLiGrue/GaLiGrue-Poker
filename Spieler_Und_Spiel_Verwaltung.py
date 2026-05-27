@@ -143,7 +143,7 @@ def spieler_aktion_ausfuehren(Spiel, Spieler, Aktion, RaiseBetrag=50):
         Spiel.set_LetzteAktion(f"{Spieler.get_Name()} foldet.")
     elif Aktion == "all_in":
         Gezahlt = all_in_setzen_web(Spieler)
-        Spiel.add_Pot(Gezahlt)
+        Spiel.add_Chips(Gezahlt)
         if Spieler.get_ChipsGesetzt() > Spiel.get_AktuellerEinsatz():
             Spiel.set_AktuellerEinsatz(Spieler.get_ChipsGesetzt())
             for AndererSpieler in aktive_spieler(Spiel):
@@ -154,7 +154,7 @@ def spieler_aktion_ausfuehren(Spiel, Spieler, Aktion, RaiseBetrag=50):
     elif Aktion == "raise":
         GesamtEinsatz = ZuCallen + max(25, RaiseBetrag)
         Gezahlt = chips_setzen_web(Spieler, GesamtEinsatz)
-        Spiel.add_Pot(Gezahlt)
+        Spiel.add_Chips(Gezahlt)
         Spiel.set_AktuellerEinsatz(max(Spiel.get_AktuellerEinsatz(), Spieler.get_ChipsGesetzt()))
         for AndererSpieler in aktive_spieler(Spiel):
             if AndererSpieler.get_ClientName() != Spieler.get_ClientName():
@@ -163,7 +163,7 @@ def spieler_aktion_ausfuehren(Spiel, Spieler, Aktion, RaiseBetrag=50):
         Spiel.set_LetzteAktion(f"{Spieler.get_Name()} raist um {max(25, RaiseBetrag)} Chips.")
     else:
         Gezahlt = chips_setzen_web(Spieler, ZuCallen)
-        Spiel.add_Pot(Gezahlt)
+        Spiel.add_Chips(Gezahlt)
         Spieler.set_Gehandelt(True)
         Spiel.set_LetzteAktion(f"{Spieler.get_Name()} callt {Gezahlt} Chips." if Gezahlt else f"{Spieler.get_Name()} checkt.")
 
