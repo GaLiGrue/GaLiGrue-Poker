@@ -3,7 +3,7 @@ Reine Poker-Spiellogik: Handvergleich, Gewinnerbewertung und Kartenevaluierung.
 Keine Website-Verwaltung oder Spielfluss-Logik.
 """
 
-from classes import Karte, Mitte, Player
+from classes import Karte, Player, Aktionen
 from Spiel_Helfer import aktueller_spieler, aktive_spieler
 
 FARBEN = {
@@ -216,7 +216,7 @@ def hand_starten(Spiel):
         Spieler.add_Chips(-Gezahlt)
         Spieler.add_ChipsGesetzt(Gezahlt)
         Spieler.set_AllIn(Spieler.get_Chips() == 0)
-        Spiel.add_Pot(Gezahlt)
+        Spiel.add_Chips(Gezahlt)
         return Gezahlt
 
     def blinds_setzen():
@@ -245,8 +245,8 @@ def hand_starten(Spiel):
         return
 
     Spiel.set_Deck(Spiel.erstelle_deck())
-    Spiel.set_Gemeinschaftskarten([])
-    Spiel.set_Pot(0)
+    Spiel.set_Karten([])
+    Spiel.set_Chips(0)
     Spiel.set_AktuellerEinsatz(0)
     Spiel.set_Phase("preflop")
     Spiel.set_Gewinner(None)
@@ -278,15 +278,15 @@ def naechste_phase(Spiel):
     Spiel.set_AktuellerEinsatz(0)
 
     if Spiel.get_Phase() == "preflop":
-        Spiel.add_Gemeinschaftskarten(karten_ziehen(Spiel.get_Deck(), 3))
+        Spiel.add_Karten(karten_ziehen(Spiel.get_Deck(), 3))
         Spiel.set_Phase("flop")
         Spiel.set_Nachricht("Der Flop liegt auf dem Tisch.")
     elif Spiel.get_Phase() == "flop":
-        Spiel.add_Gemeinschaftskarten(karten_ziehen(Spiel.get_Deck(), 1))
+        Spiel.add_Karten(karten_ziehen(Spiel.get_Deck(), 1))
         Spiel.set_Phase("turn")
         Spiel.set_Nachricht("Der Turn wurde aufgedeckt.")
     elif Spiel.get_Phase() == "turn":
-        Spiel.add_Gemeinschaftskarten(karten_ziehen(Spiel.get_Deck(), 1))
+        Spiel.add_Karten(karten_ziehen(Spiel.get_Deck(), 1))
         Spiel.set_Phase("river")
         Spiel.set_Nachricht("Der River wurde aufgedeckt.")
     else:
@@ -332,15 +332,16 @@ def runde_beenden(Spiel):
         Ergebnis = None
     else:
         # Gewinner direkt bestimmen mit gewinner_bestimmen
-        KartenMitte = Mitte()
-        KartenMitte.add_Karten([Karte(Name) for Name in Spiel.get_Gemeinschaftskarten()])
+        # Erstelle ein Aktionen-Objekt für die Gemeinschaftskarten
+        KartenMitte = Aktionen(0)
+        KartenMitte.add_Karten([Karte(Name) for Name in Spiel.get_Karten()])
         GewinnerSpieler, Ergebnis = gewinner_bestimmen(Kandidaten, KartenMitte)
         Gewinner = GewinnerSpieler[0] if GewinnerSpieler else Kandidaten[0]
 
-    Gewinner.add_Chips(Spiel.get_Pot())
+    Gewinner.add_Chips(Spiel.get_Chips())
     for Spieler in Spiel.get_Spieler():
         Spieler.set_Eliminiert(Spieler.get_Chips() <= 0)
     Spiel.set_Gewinner(Gewinner.get_Name())
     Spiel.set_Phase("showdown")
-    Spiel.set_Nachricht(f"{Gewinner.get_Name()} gewinnt {Spiel.get_Pot()} Chips" + (f" mit {Ergebnis}." if Ergebnis else "."))
-    Spiel.set_Pot(0)
+    Spiel.set_Nachricht(f"{Gewinner.get_Name()} gewinnt {Spiel.get_Chips()} Chips" + (f" mit {Ergebnis}." if Ergebnis else "."))
+    Spiel.set_Chips(0)
