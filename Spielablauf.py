@@ -348,6 +348,8 @@ def runde_beenden(Spiel):
     PotProGewinner = Spiel.get_Chips() // AnzahlGewinner if AnzahlGewinner else 0
     for Gewinner in GewinnerSpieler:
         Gewinner.add_Chips(PotProGewinner)
+    for Spieler in Spiel.get_Spieler():
+        Spieler.set_Eliminiert(Spieler.get_Chips() <= 0)
 
     Spiel.set_Gewinner(''.join(f'{Gewinner.get_Name()}, ' for Gewinner in GewinnerSpieler))
     Spiel.set_Gewinner(Spiel.get_Ergebnis().rstrip(', '))
