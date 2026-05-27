@@ -1,7 +1,6 @@
 """
-Modul für die Erstellung von Spielern und Spielen.
+Funktionen zur Erstellung von Player- und Spiel-Objekten, Verwaltung von Spielern, Prüfung und Durchführung von Spieleraktionen
 """
-
 
 from classes import Player, Spiel
 from Spiel_Helfer import aktueller_spieler, aktive_spieler, spieler_finden
